@@ -22,10 +22,16 @@ def generate_eyebuydirect_data():
     start_date = datetime(2023, 1, 1).date()
     end_date = datetime(2025, 8, 17).date()
     
-    # 地区配置（基于EyeBuyDirect实际业务）
-    regions = ['US', 'Japan', 'Europe']
-    region_weights = [0.6, 0.25, 0.15]
-    region_currencies = {'US': 'USD', 'Japan': 'JPY', 'Europe': 'EUR'}
+    # 地区配置（基于EyeBuyDirect真实业务分布）
+    regions = ['US', 'Australia', 'France', 'UK', 'Japan']
+    region_weights = [0.95, 0.015, 0.015, 0.01, 0.01]  # 美国95%，其他国家共5%
+    region_currencies = {
+        'US': 'USD', 
+        'Australia': 'AUD', 
+        'France': 'EUR', 
+        'UK': 'GBP', 
+        'Japan': 'JPY'
+    }
     
     # 获客渠道配置
     channels = ['Social Media', 'Google Search', 'Direct', 'Email Marketing', 'Influencer']
@@ -82,8 +88,14 @@ def generate_eyebuydirect_data():
     orders_data = []
     order_id = 1
     
-    # 转化率配置
-    conversion_rates = {'US': 0.7, 'Japan': 0.6, 'Europe': 0.65}
+    # 转化率配置（美国市场最成熟）
+    conversion_rates = {
+        'US': 0.72,       # 美国主要市场，转化率最高
+        'Australia': 0.65, # 英语市场，转化率较高
+        'France': 0.58,    # 欧洲市场，转化率中等
+        'UK': 0.68,        # 英国市场，转化率较高
+        'Japan': 0.55      # 亚洲市场，转化率稍低
+    }
     
     # 获客成本配置
     cac_by_channel = {
@@ -99,13 +111,15 @@ def generate_eyebuydirect_data():
         if random.random() > conversion_rates[user['region']]:
             continue  # 这个用户不购买
             
-        # 决定购买次数
+        # 决定购买次数（基于市场成熟度）
         if user['region'] == 'US':
-            num_orders = max(1, min(10, np.random.poisson(2.5)))
-        elif user['region'] == 'Japan':
-            num_orders = max(1, min(10, np.random.poisson(1.8)))
-        else:  # Europe
-            num_orders = max(1, min(10, np.random.poisson(2.0)))
+            num_orders = max(1, min(10, np.random.poisson(2.8)))  # 美国市场购买频率最高
+        elif user['region'] in ['Australia', 'UK']:
+            num_orders = max(1, min(10, np.random.poisson(2.2)))  # 英语市场中等
+        elif user['region'] == 'France':
+            num_orders = max(1, min(10, np.random.poisson(1.9)))  # 欧洲市场
+        else:  # Japan
+            num_orders = max(1, min(10, np.random.poisson(1.8)))  # 日本市场
         
         # 生成每个订单
         last_order_date = user['registration_date']
@@ -136,11 +150,17 @@ def generate_eyebuydirect_data():
             
             # 转换为当地货币
             if user['currency'] == 'JPY':
-                price = round(price_usd * 150, 0)  # 假设汇率1USD=150JPY
+                price = round(price_usd * 150, 0)  # 1USD = 150JPY
                 currency = 'JPY'
             elif user['currency'] == 'EUR':
-                price = round(price_usd * 0.85, 2)  # 假设汇率1USD=0.85EUR
+                price = round(price_usd * 0.85, 2)  # 1USD = 0.85EUR
                 currency = 'EUR'
+            elif user['currency'] == 'GBP':
+                price = round(price_usd * 0.75, 2)  # 1USD = 0.75GBP
+                currency = 'GBP'
+            elif user['currency'] == 'AUD':
+                price = round(price_usd * 1.45, 2)  # 1USD = 1.45AUD
+                currency = 'AUD'
             else:
                 price = price_usd
                 currency = 'USD'
